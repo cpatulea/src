@@ -1,0 +1,163 @@
+<html>
+<head>
+  <title>Climate Finder</title>
+  <link rel="shortcut icon" href="static/sun.jpg"/>
+  <meta name=viewport content="width=device-width, initial-scale=1">
+  {{if .Results}}
+    <meta property="og:description"   content="Top cities with max {{.Max}} and min {{.Min}} degree weather: {{with index .Results 0}}{{.Station.Name}}, {{.Station.Country}}{{end}}; {{with index .Results 1}}{{.Station.Name}}, {{.Station.Country}}{{end}}; {{with index .Results 2}}{{.Station.Name}}, {{.Station.Country}}{{end}}; ..."/>
+  {{end}}
+  <style>
+  body {
+    font-family: "Helvetica Neue";
+    color: #636363;
+    line-height: 1.5;
+  }
+  div.content {
+    max-width: 50em;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  input[type=number] {
+    font-size: 110%;
+    width: 3em;
+  }
+  div.results {
+    max-width: 60em;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  div.list {
+    display: inline-block;
+    width: 40%;
+  }
+  div.map {
+    display: inline-block;
+    width: 59%;
+    vertical-align: top;
+  }
+  #map {
+    height: 30em;
+  }
+  iframe#facebook {
+    display: block;
+  }
+  h1, h1 a {
+    color: #6e7272;
+  }
+  h1 a {
+    text-decoration: none;
+  }
+  div.error {
+    color: #e00;
+  }
+  /* width */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+  }
+   
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #888; 
+  }
+
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+  }
+  footer {
+    margin-top: 6em;
+    color: #aaa;
+  }
+
+  @media(max-width: 600px) {
+    h1 {
+      line-height: 1;
+    }
+    form {
+      font-size: 120%;
+    }
+    div.list, div.map {
+      width: 100%;
+    }
+    iframe#facebook {
+      margin-top: 1em;
+    }
+    li a img {
+      width: 24px;
+      height: 24px;
+    }
+    footer {
+      margin-top: 0;
+    }
+  }
+  </style>
+</head>
+<body>
+<div class="content">
+  <h1><a href="">Climate Finder</a></h1>
+  <p>Use <a href="https://data.nodc.noaa.gov/cgi-bin/iso?id=gov.noaa.ncdc:C00516" target="_blank">National Climatic Data Center (NCDC)'s global weather
+  data</a> to find your ideal climate.</p>
+  <p>This searches through 10000 weather stations across the world to find the
+  ones that most closely match the given maximum and minimum daily
+  temperatures:</p>
+
+  <p>
+    <form>
+      <label><b>Ideal daily maximum:</b> <input type="number" required="required" name="max" step="0.1" maxlength="6" value="{{.Max}}"/> °C (ex. 24.5)</label><br/>
+      <label><b>Ideal daily minimum:</b> <input type="number" required="required" name="min" step="0.1" maxlength="6" value="{{.Min}}"/> °C (ex. 19.5)</label><br/>
+      <input type="submit" value="Find" />
+    </form>
+  </p>
+
+  <hr width="50%"/>
+
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+</div>
+
+  {{with .Results}}
+<div class="results">
+  <div class="list">
+
+    <ol>
+    {{range $index, $element := .}}
+      <li data-latlng="{{.Station.LatLng}}"><a href="http://www.google.com/search?q=weather+{{.Station.Name}},+{{.Station.Country}}" target="_blank"><abbr title="USAF {{.USAF}} WBAN {{.WBAN}}">{{.Station.Name}},
+        {{.Station.Country}}</abbr></a> <a
+        href="https://www.google.com/maps/search/?api=1&amp;query={{.Station.LatLng}}"><img src="https://www.google.com/images/branding/product/ico/maps_32dp.ico" width="16" height="16"/></a><br/>
+        (max {{.Max1 | printf "%.01f"}} ± {{.MaxDev | printf "%.01f"}} °C,
+        min {{.Min1 | printf "%.01f"}} ± {{.MinDev | printf "%.01f"}} °C)</li>
+    {{end}}
+    </ol>
+
+  </div>
+  <div class="map">
+    <div id="map"></div>
+  </div>
+
+  <iframe id="facebook" width="73" height="28" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>
+  <script>
+  document.getElementById('facebook').src =
+    'https://www.facebook.com/plugins/share_button.php?href=' +
+    encodeURIComponent(location.href) +
+    '&layout=button&size=large&width=73&height=28';
+  </script>
+
+  <script src="static/climate.js"></script>
+  <script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyASRYfsOzsWfQlf7H05xDaTcf2ewIvkTJc&amp;callback=initMap">
+  </script>
+</div>
+  {{end}}
+
+<footer>
+Not affiliated with NCDC.
+</footer>
+
+<a href="https://github.com/cpatulea/src/tree/master/isd" style="position: absolute; overflow: hidden; top: 0; right: 0"><img width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>
+
+</body>
+</html>
