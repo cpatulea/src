@@ -1,0 +1,24 @@
+location /p5/ {
+  resolver 8.8.8.8;
+  proxy_pass_request_headers off;
+  if ($request_uri ~* "/p5/([a-zA-Z0-9%]*)\.html$") {
+    proxy_pass https://raw.githubusercontent.com/cpatulea/src/master/p5/$1.js;
+
+    header_filter_by_lua_block {
+      ngx.header.content_length = nil
+      ngx.header.content_type = 'text/html'
+      ngx.header.content_encoding = nil
+      ngx.header.content_security_policy = nil
+    }
+
+    body_filter_by_lua_block {
+      if ngx.ctx.started == nil then
+        ngx.arg[1] = '<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.min.js"></script><script>'..ngx.arg[1]
+        ngx.ctx.started = 1
+      end
+      if ngx.arg[2] then
+        ngx.arg[1] = ngx.arg[1]..'</script>'
+      end
+    }
+  }
+}
