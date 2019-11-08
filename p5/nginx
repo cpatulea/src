@@ -1,14 +1,20 @@
 location /p5/ {
   resolver 8.8.8.8;
   proxy_pass_request_headers off;
-  if ($request_uri ~* "/p5/([a-zA-Z0-9%]*)\.html$") {
+  if ($request_uri ~ "^/p5/((?:[a-zA-Z0-9]|%20)*)\.html$") {
     proxy_pass https://raw.githubusercontent.com/cpatulea/src/master/p5/$1.js;
 
     header_filter_by_lua_block {
-      ngx.header.content_length = nil
-      ngx.header.content_type = 'text/html'
-      ngx.header.content_encoding = nil
-      ngx.header.content_security_policy = nil
+      if ngx.status == 200 and
+          ngx.header.content_type:match('text/plain.*') then
+        ngx.header.content_length = nil
+        ngx.header.content_type = 'text/html'
+        ngx.header.content_encoding = nil
+        ngx.header.content_security_policy = nil
+      else
+        ngx.arg[2] = true
+        return ngx.ERROR
+      end
     }
 
     body_filter_by_lua_block {
