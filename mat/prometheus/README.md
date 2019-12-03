@@ -4,6 +4,8 @@ Some wifi clients have been experiencing flaky connection with my OpenWrt router
 
 [Prometheus](https://prometheus.io/) is a monitoring system and time series database with efficient storage, powerful querying and good compatibility with graphing systems ([Grafana](https://grafana.com/)). However, it is not designed for this use case.
 
+![Screenshot](https://i.redd.it/s01mxnaa16241.png)
+
 ## Constraints
 
 *  Observe short-lived events (< 10 seconds). Therefore, need high collection frequency.
