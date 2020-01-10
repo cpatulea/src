@@ -1,6 +1,6 @@
 # Debugging ath9k using Prometheus+Grafana
 
-Some wifi clients have been experiencing flaky connection with my OpenWrt router. `/sys/kernel/debug/ieee80211` offers [lots of debug information](https://elixir.bootlin.com/linux/latest/source/drivers/net/wireless/ath/ath9k/debug.c) but there's no built-in system in OpenWrt to collect and display these metrics.
+Some wifi clients have been experiencing flaky connection with my OpenWrt router. `/sys/kernel/debug/ieee80211` offers [lots of debug information](https://elixir.bootlin.com/linux/latest/source/drivers/net/wireless/ath/ath9k/debug.c) but there's no built-in system in OpenWrt to collect and display these metrics. [`nl80211`](https://wireless.wiki.kernel.org/en/developers/documentation/nl80211) (which backs `iw` command) also contains lots of information (per client signal strength).
 
 [Prometheus](https://prometheus.io/) is a monitoring system and time series database with efficient storage, powerful querying and good compatibility with graphing systems ([Grafana](https://grafana.com/)). However, it is not designed for this use case.
 
@@ -18,7 +18,7 @@ Some wifi clients have been experiencing flaky connection with my OpenWrt router
 Device only does collection and buffering. All parsing, data processing and graphing is done off-site, on a powerful machine.
 
 On device:
-*  [`collect.lua`](collect.lua) walks `/sys/kernel/debug/ieee80211` and generates timestamped snapshots. Currently every 2 seconds.
+*  [`collect.c`](collect.c) walks `/sys/kernel/debug/ieee80211`, `nl80211`, `nf_conntrack` and generates timestamped snapshots. Currently every 2 seconds.
 *  `/tmp/prom` contains a circular buffer of snapshots (5 MB). For the current collection set (~100 `debugfs` files, 600 Prometheus metrics) this is equivalent to ~20 minutes of collection during which device can operate offline without data loss. Tolerance to disconnected operation is limited only by local storage.
 
 Off-site:
