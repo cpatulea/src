@@ -35,4 +35,5 @@ When updating parsers, re-run `bulkimport.go` on archived snapshots, and metrics
 
 ## Future Work
 
-Collect `nl80211` data (like `iw wlan0 station dump`).
+*  /proc (per-process CPU time, memory)
+*  Network probes (eg. ping to local gateway)
