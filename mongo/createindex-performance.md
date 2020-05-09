@@ -1,10 +1,25 @@
-# createIndex Performance
-
 MongoDB has built-in [full-text indexing](https://docs.mongodb.com/manual/core/index-text/). It is a conventional [inverted index](https://en.wikipedia.org/wiki/Inverted_index) and supports bulk building on an existing collection. For large collections, index building speed can be an important factor.
 
 **tl;dr MongoDB at HEAD (4.5.0-1037-gbe29fb1023) `createIndex` is ~30% faster than 4.2.6.**
 
-## Test Data
+Table of Contents
+=================
+
+   * [Test Data](#test-data)
+   * [MongoDB Version](#mongodb-version)
+   * [maxIndexBuildMemoryUsageMegabytes](#maxindexbuildmemoryusagemegabytes)
+   * [Collection Scan vs Inserting](#collection-scan-vs-inserting)
+   * [GNU sort (8.30)](#gnu-sort-830)
+   * [std::stable_sort](#stdstable_sort)
+   * [Stemming](#stemming)
+   * [Tokenizer](#tokenizer)
+   * [Profiling](#profiling)
+   * [MongoDB at HEAD (r4.5.0-1037-gbe29fb1023)](#mongodb-at-head-r450-1037-gbe29fb1023)
+   * [TermFrequencyMap / absl::flat_hash_map](#termfrequencymap--abslflat_hash_map)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
+# Test Data
 
 The data is designed to approximate English text. It is generated using this Python script: [fill.py](fill.py). The collection has 600 K documents (165 MiB) looks like this:
 
@@ -39,11 +54,11 @@ and stats:
 }
 ```
 
-## MongoDB Version
+# MongoDB Version
 
 Initially, tests are done using MongoDB 4.2.6 (default version for Debian buster as of May 2020). As we will see later, MongoDB has significantly improved indexing performance in newer versions.
 
-## maxIndexBuildMemoryUsageMegabytes
+# maxIndexBuildMemoryUsageMegabytes
 
 `maxIndexBuildMemoryUsageMegabytes` is a [documented](https://docs.mongodb.com/manual/reference/parameters/#param.maxIndexBuildMemoryUsageMegabytes) parameter for index building. It **did not have a significant effect** on speed:
 
@@ -63,7 +78,7 @@ real  1m10.501s
 real  1m10.880s
 ```
 
-## Collection Scan vs Inserting
+# Collection Scan vs Inserting
 
 Indexing is performed in two stages:
 
@@ -90,7 +105,7 @@ sudo cat /var/log/mongodb/mongod.log | \
 2020-05-02T20:27:08.212-0400 I  INDEX    [conn2] index build: inserted 15009042 keys from external sorter into index in 46 seconds
 ```
 
-## GNU sort (8.30)
+# GNU sort (8.30)
 
 As a baseline, here are timings for `sort` command. Note `--parallel=1` for a fair comparison with MongoDB's single-threaded sorting.
 
@@ -116,7 +131,7 @@ Note the **locale** has a significant impact on performance, and this has been p
 
 Note `LC_ALL=C` will sort non-ASCII characters incorrectly.
 
-## std::stable_sort
+# std::stable_sort
 
 Internally, MongoDB uses [std::stable_sort](https://en.cppreference.com/w/cpp/algorithm/stable_sort). What is the ideal case, for sorting alone, words contiguous in memory? See [stable_sort.cc](stable_sort.cc):
 
@@ -133,7 +148,7 @@ user  0m7.613s
 sys 0m0.160s
 ```
 
-## Stemming
+# Stemming
 
 Setting `default_language: none` disables stemming, but this does not seem to have a significant effect:
 
@@ -153,7 +168,7 @@ sys 0m0.030s
 
 Though note the experiment is slightly inconclusive because the test words are not actual English words, so they would not trigger the stemming logic in the same way.
 
-## Tokenizer
+# Tokenizer
 
 The default full-text index is version 3; the older [version 2](https://docs.mongodb.com/manual/core/index-text/#versions) uses a simpler tokenizer (BasicFTSTokenizer), but this also does not have much of an effect:
 
@@ -171,7 +186,7 @@ user  0m0.074s
 sys 0m0.027s
 ```
 
-## Profiling
+# Profiling
 
 Linux [`perf record`](https://perf.wiki.kernel.org/index.php/Tutorial#Sampling_with_perf_record) allows collecting very rich CPU profiles:
 
@@ -201,7 +216,7 @@ And [Brendan Gregg's Flame Graphs](http://www.brendangregg.com/FlameGraphs/cpufl
 
 ![MongoDB 4.2.6 createIndex Flamegraph](perf-mongo4.2-ftsv2.svg)
 
-## MongoDB at HEAD (r4.5.0-1037-gbe29fb1023)
+# MongoDB at HEAD (r4.5.0-1037-gbe29fb1023)
 
 There have been many improvements to indexing performance since 4.2 (first release 4.2.1 in October 2019), in git HEAD (May 2020) it is **~30% faster**:
 
@@ -223,7 +238,7 @@ and the profile reflects optimizations in **collection scan** phase and relative
 
 ![MongoDB 4.5.0-1037-gbe29fb1023 createIndex Flamegraph](perf-mongogit.svg)
 
-## TermFrequencyMap / absl::flat_hash_map
+# TermFrequencyMap / absl::flat_hash_map
 
 `TermFrequencyMap` is used as temporary storage of terms for a single document, then, discarded. It is a `stdx::unordered_map<std::string, double>` which is defined as a [`absl::node_hash_map`](https://abseil.io/docs/cpp/guides/container#abslnode_hash_map-and-abslnode_hash_set). Such small and short-lived maps can sometimes benefit from `absl::flat_hash_map`, which is the [recommended default](https://abseil.io/docs/cpp/guides/container#abslflat_hash_map-and-abslflat_hash_set). Unfortunately, this does not help performance much:
 
