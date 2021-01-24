@@ -72,9 +72,11 @@ After some searching, we can find very similar "supervisor IC", also with a `PGI
 ![Datasheet PS224 - PGI](datasheet-ps224-pgi.png)
 ![Photo secondary D18, R44, C](board-pgi.jpg)
 
-Note also that the secondary winding of the main transformer corresponds well with the ripple on the +12V output rail:
+Note also that the voltage on the secondary winding of the main transformer corresponds well with the ripple on the +12V output rail:
 
 ![Waveform +12V, secondary winding](wave-secondary.png)
+
+It seems like for some time (~10 ms) the supply starts switching. The typical switching frequency is around 100 kHz which is why on this time scale (10 ms/div) it looks like very rapid bursts. During this time, the +12V output rail also increases as the output capacitor charges. But, shortly after that (~30 ms), the switching stops completely, and the output capacitor slowly discharges.
 
 From now we will use +12V output as the "heartbeat" of the circuit and show other signals in time reference to the +12V output, where it seems the main supply is periodically starting and stopping.
 
@@ -189,7 +191,7 @@ On ohmmeter they measure open circuit (that's good) and on capacitor meter they 
 
 ## Equivalent series resistance
 
-The ideal capacitor behaves as ![I = C \frac{dV}{dt}](https://render.githubusercontent.com/render/math?math=%5Cdisplaystyle+I+%3D+C+%5Cfrac%7BdV%7D%7Bdt%7D), but in practice, capacitors have parasitic resistance and behave as if they have a small resistor in series ([Equivalent series resistance (ESR)](https://en.wikipedia.org/wiki/Equivalent_series_resistance)). When this resistance is small, it does not interfere much.
+The ideal capacitor behaves as ![\color{NavyBlue}{I = C \frac{dV}{dt}}](https://render.githubusercontent.com/render/math?math=%5Clarge+%5Ctextstyle+%5Ccolor%7BNavyBlue%7D%7BI+%3D+C+%5Cfrac%7BdV%7D%7Bdt%7D%7D), but in practice, capacitors have parasitic resistance and behave as if they have a small resistor in series ([Equivalent series resistance (ESR)](https://en.wikipedia.org/wiki/Equivalent_series_resistance)). When this resistance is small, it does not interfere much.
 
 Over time, capacitors (especially electrolytic) deteriorate, and the ESR increases. High ESR, as if we had an RC circuit with a high R value, significantly reduces the capacitor's ability to regulate voltage across its terminals, and can result in the symptoms we saw above (very high ripple on Vaux).
 
@@ -200,7 +202,7 @@ There are [ESR meter](https://en.wikipedia.org/wiki/ESR_meter) devices but they 
 
 If the capacitor is close to ideal, we should see very little voltage change between its terminals, because it is using its internal charge to regulate the voltage. But, if the capacitor has high ESR, that internal resistance will "allow" the terminal voltage to deviate and we will see a (small) pulse.
 
-How short should the pulse be? It should be so short that the "ideal capacitor" does not charge significantly during that time. We can calculate that using [the RC time constant](https://en.wikipedia.org/wiki/RC_circuit#Time-domain_considerations). Recall our physical resistor is 470 Ω, let's assume ESR is zero, C = 47 µF, and let's try a pulse of 2 µs. In that time, the capacitor should charge to ![1 - e^{-\frac{2 \mu s}{470 \Omega \times 47 \mu F}} \approx 10^{-4}](https://render.githubusercontent.com/render/math?math=%5Cdisplaystyle+1+-+e%5E%7B-%5Cfrac%7B2+%5Cmu+s%7D%7B470+%5COmega+%5Ctimes+47+%5Cmu+F%7D%7D+%5Capprox+10%5E%7B-4%7D) of its final value. That's negligible, so it should work well for our experiment.
+How short should the pulse be? It should be so short that the "ideal capacitor" does not charge significantly during that time. We can calculate that using [the RC time constant](https://en.wikipedia.org/wiki/RC_circuit#Time-domain_considerations). Recall our physical resistor is 470 Ω, let's assume ESR is zero, C = 47 µF, and let's try a pulse of 2 µs. In that time, the capacitor should charge to ![\color{NavyBlue}{1 - e^{-\frac{2 \mu s}{470 \Omega \times 47 \mu F}} \approx 10^{-4}}](https://render.githubusercontent.com/render/math?math=%5Clarge+%5Ctextstyle+%5Ccolor%7BNavyBlue%7D%7B1+-+e%5E%7B-%5Cfrac%7B2+%5Cmu+s%7D%7B470+%5COmega+%5Ctimes+47+%5Cmu+F%7D%7D+%5Capprox+10%5E%7B-4%7D%7D) of its final value. That's negligible, so it should work well for our experiment.
 
 Any voltage we see on the real capacitor must be due to a voltage divider between the 470 Ω and the unknown internal resistance R:
 
@@ -208,7 +210,7 @@ Any voltage we see on the real capacitor must be due to a voltage divider betwee
 
 Let's try to estimate the ESR:
 
-![\frac{R}{470 \Omega + R} = \frac{0.66 V}{4.0 V} \rightarrow R \approx 92 \Omega](https://render.githubusercontent.com/render/math?math=%5Cdisplaystyle+%5Cfrac%7BR%7D%7B470+%5COmega+%2B+R%7D+%3D+%5Cfrac%7B0.66+V%7D%7B4.0+V%7D+%5Crightarrow+R+%5Capprox+92+%5COmega)
+![\color{NavyBlue}{\frac{R}{470 \Omega + R} = \frac{0.66 V}{4.0 V} \rightarrow R \approx 92 \Omega}](https://render.githubusercontent.com/render/math?math=%5Clarge+%5Ctextstyle+%5Ccolor%7BNavyBlue%7D%7B%5Cfrac%7BR%7D%7B470+%5COmega+%2B+R%7D+%3D+%5Cfrac%7B0.66+V%7D%7B4.0+V%7D+%5Crightarrow+R+%5Capprox+92+%5COmega%7D)
 
 Now let's look at a new capacitor:
 
@@ -222,4 +224,4 @@ So, it looks like this was the culprit: bypass capacitors on the auxiliary suppl
 
 ## Thanks
 
-Thanks to [Foulab](http://foulab.org/) for providing access to electronics tools (isolation transformer, signal generator), [@danukeru](https://github.com/danukeru) for the oscilloscope, and a friend for PSU debugging and ESR measurement tips.
+Thanks to [Foulab](http://foulab.org/) for providing access to electronics tools (oscilloscope, isolation transformer, signal generator) and a friend for PSU debugging and ESR measurement tips.
